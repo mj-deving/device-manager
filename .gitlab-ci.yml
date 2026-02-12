@@ -1,0 +1,63 @@
+stages:
+  - build
+  - test
+  - package
+
+variables:
+  MAVEN_CLI_OPTS: "-s .m2/settings.xml -DskipTests"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+cache:
+  paths:
+    - .m2/repository/
+    - target/
+
+build_server:
+  stage: build
+  image: maven:3.8.7-openjdk-17
+  script:
+    - mvn clean compile -pl device-manager-server
+  artifacts:
+    paths:
+      - device-manager-server/target/
+    expire_in: 1 hour
+
+build_client:
+  stage: build
+  image: maven:3.8.7-openjdk-17
+  script:
+    - mvn clean compile -pl device-manager-client
+  artifacts:
+    paths:
+      - device-manager-client/target/
+    expire_in: 1 hour
+
+test_server:
+  stage: test
+  image: maven:3.8.7-openjdk-17
+  script:
+    - mvn test -pl device-manager-server
+  dependencies:
+    - build_server
+
+test_client:
+  stage: test
+  image: maven:3.8.7-openjdk-17
+  script:
+    - mvn test -pl device-manager-client
+  dependencies:
+    - build_client
+
+package:
+  stage: package
+  image: maven:3.8.7-openjdk-17
+  script:
+    - mvn clean package -DskipTests
+  artifacts:
+    paths:
+      - device-manager-server/target/*.jar
+      - device-manager-client/target/*.jar
+    expire_in: 30 days
+  only:
+    - main
+    - tags
