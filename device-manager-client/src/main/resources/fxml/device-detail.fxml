@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.mj.portfolio.client.controller.DeviceDetailController"
+      spacing="16" style="-fx-padding: 20;">
+
+    <Label text="Device Details" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
+
+    <GridPane hgap="16" vgap="10">
+        <Label text="Name:"       GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label"/>
+        <Label fx:id="lblName"    GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+        <Label text="Type:"       GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label"/>
+        <Label fx:id="lblType"    GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+        <Label text="Status:"     GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label"/>
+        <Label fx:id="lblStatus"  GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+        <Label text="IP Address:" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="field-label"/>
+        <Label fx:id="lblIp"      GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+        <Label text="Location:"   GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="field-label"/>
+        <Label fx:id="lblLocation" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+        <Label text="Created:"    GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="field-label"/>
+        <Label fx:id="lblCreatedAt" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+        <Label text="Updated:"    GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="field-label"/>
+        <Label fx:id="lblUpdatedAt" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+    </GridPane>
+
+    <Region VBox.vgrow="ALWAYS"/>
+
+    <HBox spacing="10">
+        <Button text="Edit"   onAction="#onEdit"   styleClass="btn-primary"/>
+        <Button text="Delete" onAction="#onDelete" styleClass="btn-danger"/>
+    </HBox>
+</VBox>

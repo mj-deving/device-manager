@@ -29,14 +29,7 @@
             <artifactId>javafx-fxml</artifactId>
         </dependency>
 
-        <!-- HTTP Client -->
-        <dependency>
-            <groupId>org.apache.httpcomponents.client5</groupId>
-            <artifactId>httpclient5</artifactId>
-            <version>5.2.1</version>
-        </dependency>
-
-        <!-- JSON Processing -->
+        <!-- JSON Processing -- java.net.http.HttpClient (Java 17 built-in) is used instead of httpclient5 -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>

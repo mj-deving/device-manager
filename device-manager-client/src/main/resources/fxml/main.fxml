@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.mj.portfolio.client.controller.MainController"
+            stylesheets="@../css/styles.css">
+
+    <!-- TOP: Toolbar -->
+    <top>
+        <VBox>
+            <ToolBar styleClass="main-toolbar">
+                <Label text="Device Manager" styleClass="app-title"/>
+                <Separator orientation="VERTICAL"/>
+                <Button text="+ New Device" onAction="#onNewDevice" styleClass="btn-primary"/>
+                <Button text="⟳ Refresh" onAction="#onRefresh"/>
+                <Separator orientation="VERTICAL"/>
+                <TextField fx:id="searchField" promptText="Search name, IP, location..." prefWidth="220"/>
+                <Label text="Status:"/>
+                <ComboBox fx:id="statusFilter" prefWidth="140"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="connectionLabel" text="Connecting..."/>
+            </ToolBar>
+        </VBox>
+    </top>
+
+    <!-- CENTER: Table -->
+    <center>
+        <TableView fx:id="deviceTable" VBox.vgrow="ALWAYS">
+            <columns>
+                <TableColumn fx:id="colName"     text="Name"      prefWidth="200"/>
+                <TableColumn fx:id="colType"     text="Type"      prefWidth="130"/>
+                <TableColumn fx:id="colStatus"   text="Status"    prefWidth="130"/>
+                <TableColumn fx:id="colIp"       text="IP Address" prefWidth="140"/>
+                <TableColumn fx:id="colLocation" text="Location"  prefWidth="180"/>
+            </columns>
+            <placeholder>
+                <Label text="No devices found."/>
+            </placeholder>
+        </TableView>
+    </center>
+
+    <!-- BOTTOM: Status bar -->
+    <bottom>
+        <HBox styleClass="status-bar" spacing="10" style="-fx-padding: 4 10;">
+            <Label fx:id="statusBar" text="Loading..."/>
+        </HBox>
+    </bottom>
+</BorderPane>

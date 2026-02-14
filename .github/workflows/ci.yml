@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: devicedb
+          POSTGRES_USER: portfolio
+          POSTGRES_PASSWORD: portfolio_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Apply database schema
+        run: |
+          PGPASSWORD=portfolio_dev_password psql \
+            -h localhost -U portfolio -d devicedb \
+            -f device-manager-server/src/main/resources/db/schema.sql
+
+      - name: Compile all modules
+        run: mvn clean compile -B
+
+      - name: Run server tests
+        run: mvn test -pl device-manager-server -B
+
+      - name: Compile client (no GUI tests in CI)
+        run: mvn clean compile -pl device-manager-client -B
+
+      - name: Package all modules
+        run: mvn clean package -DskipTests -B
+
+      - name: Upload server JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-manager-server
+          path: device-manager-server/target/device-manager-server-*.jar
+          retention-days: 7
+
+      - name: Upload client JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-manager-client
+          path: device-manager-client/target/device-manager-client-*.jar
+          retention-days: 7
