@@ -1,9 +1,9 @@
 package com.mj.portfolio.client.controller;
 
+import com.mj.portfolio.client.AppContext;
 import com.mj.portfolio.client.model.Device;
 import com.mj.portfolio.client.model.DeviceStatus;
 import com.mj.portfolio.client.model.DeviceType;
-import com.mj.portfolio.client.service.ApiClient;
 import com.mj.portfolio.client.service.DeviceApiService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -16,10 +16,15 @@ import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -36,8 +41,9 @@ public class MainController implements Initializable {
     @FXML private ComboBox<String> statusFilter;
     @FXML private Label statusBar;
     @FXML private Label connectionLabel;
+    @FXML private HBox offlineBanner;
 
-    private final DeviceApiService apiService = new DeviceApiService(new ApiClient());
+    private final DeviceApiService apiService = new DeviceApiService(AppContext.getApiClient());
     private final ObservableList<Device> devices = FXCollections.observableArrayList();
     private FilteredList<Device> filteredDevices;
 
@@ -46,6 +52,22 @@ public class MainController implements Initializable {
         colName.setCellValueFactory(new PropertyValueFactory<>("name"));
         colType.setCellValueFactory(new PropertyValueFactory<>("type"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+        colStatus.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(DeviceStatus status, boolean empty) {
+                super.updateItem(status, empty);
+                getStyleClass().removeAll(
+                        "status-active", "status-inactive", "status-maintenance", "status-other");
+                if (empty || status == null) { setText(null); return; }
+                setText(status.name());
+                switch (status) {
+                    case ACTIVE        -> getStyleClass().add("status-active");
+                    case INACTIVE      -> getStyleClass().add("status-inactive");
+                    case MAINTENANCE   -> getStyleClass().add("status-maintenance");
+                    default            -> getStyleClass().add("status-other");
+                }
+            }
+        });
         colIp.setCellValueFactory(new PropertyValueFactory<>("ipAddress"));
         colLocation.setCellValueFactory(new PropertyValueFactory<>("location"));
 
@@ -137,16 +159,62 @@ public class MainController implements Initializable {
             applyFilters();
             connectionLabel.setText("Connected");
             connectionLabel.setStyle("-fx-text-fill: #4caf50;");
+            offlineBanner.setVisible(false);
+            offlineBanner.setManaged(false);
             updateStatusBar();
         });
 
         task.setOnFailed(e -> {
             connectionLabel.setText("Disconnected");
             connectionLabel.setStyle("-fx-text-fill: #f44336;");
+            offlineBanner.setVisible(true);
+            offlineBanner.setManaged(true);
             statusBar.setText("Error loading devices: " + task.getException().getMessage());
         });
 
         new Thread(task, "device-loader").start();
+    }
+
+    @FXML
+    private void onExportCsv() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Export Devices as CSV");
+        fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV files", "*.csv"));
+        fc.setInitialFileName("devices.csv");
+        File file = fc.showSaveDialog(deviceTable.getScene().getWindow());
+        if (file == null) return;
+        try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
+            pw.println("Name,Type,Status,IP Address,Location");
+            for (Device d : filteredDevices) {
+                pw.printf("%s,%s,%s,%s,%s%n",
+                        csvEscape(d.getName()), d.getType(), d.getStatus(),
+                        csvEscape(d.getIpAddress()), csvEscape(d.getLocation()));
+            }
+            statusBar.setText("Exported " + filteredDevices.size() + " devices to " + file.getName());
+        } catch (IOException e) {
+            showError("Export failed", e.getMessage());
+        }
+    }
+
+    private String csvEscape(String s) {
+        if (s == null) return "";
+        return s.contains(",") || s.contains("\"")
+                ? "\"" + s.replace("\"", "\"\"") + "\""
+                : s;
+    }
+
+    @FXML
+    private void onAbout() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("About Device Manager");
+        alert.setHeaderText("Device Manager Client v1.0.0");
+        alert.setContentText(
+                "Portfolio Project 2 — JavaFX Desktop Client\n" +
+                "API: " + AppContext.getApiClient().getBaseUrl() + "\n\n" +
+                "Built with JavaFX 21 + Java 17\n" +
+                "© 2026 mj-deving"
+        );
+        alert.showAndWait();
     }
 
     private void updateStatusBar() {

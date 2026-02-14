@@ -7,7 +7,7 @@
             fx:controller="com.mj.portfolio.client.controller.MainController"
             stylesheets="@../css/styles.css">
 
-    <!-- TOP: Toolbar -->
+    <!-- TOP: Toolbar + offline banner -->
     <top>
         <VBox>
             <ToolBar styleClass="main-toolbar">
@@ -15,13 +15,21 @@
                 <Separator orientation="VERTICAL"/>
                 <Button text="+ New Device" onAction="#onNewDevice" styleClass="btn-primary"/>
                 <Button text="⟳ Refresh" onAction="#onRefresh"/>
+                <Button text="⬇ Export CSV" onAction="#onExportCsv"/>
                 <Separator orientation="VERTICAL"/>
                 <TextField fx:id="searchField" promptText="Search name, IP, location..." prefWidth="220"/>
                 <Label text="Status:"/>
                 <ComboBox fx:id="statusFilter" prefWidth="140"/>
                 <Region HBox.hgrow="ALWAYS"/>
+                <Button text="About" onAction="#onAbout"/>
                 <Label fx:id="connectionLabel" text="Connecting..."/>
             </ToolBar>
+            <HBox fx:id="offlineBanner" styleClass="offline-banner"
+                  spacing="10" style="-fx-padding: 6 12;"
+                  managed="false" visible="false">
+                <Label text="⚠ Server not reachable — working offline"/>
+                <Button text="Retry" onAction="#onRefresh" styleClass="btn-retry"/>
+            </HBox>
         </VBox>
     </top>
 

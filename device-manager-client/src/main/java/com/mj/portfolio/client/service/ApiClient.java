@@ -9,6 +9,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Base64;
 
 /**
  * Thin wrapper around Java 17's built-in java.net.http.HttpClient.
@@ -22,6 +23,7 @@ public class ApiClient {
     private final String baseUrl;
     private final HttpClient httpClient;
     final Gson gson;
+    private String authHeader;
 
     public ApiClient() {
         this.baseUrl = System.getProperty("api.baseUrl", DEFAULT_BASE_URL);
@@ -33,46 +35,54 @@ public class ApiClient {
 
     public String getBaseUrl() { return baseUrl; }
 
+    public void setCredentials(String username, String password) {
+        String encoded = Base64.getEncoder().encodeToString(
+                (username + ":" + password).getBytes());
+        this.authHeader = "Basic " + encoded;
+    }
+
+    public boolean hasCredentials() { return authHeader != null; }
+
     public HttpResponse<String> get(String path) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + path))
                 .header("Accept", "application/json")
                 .timeout(Duration.ofSeconds(10))
-                .GET()
-                .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                .GET();
+        if (authHeader != null) builder.header("Authorization", authHeader);
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     public HttpResponse<String> post(String path, Object body) throws IOException, InterruptedException {
         String json = gson.toJson(body);
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + path))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .timeout(Duration.ofSeconds(10))
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                .POST(HttpRequest.BodyPublishers.ofString(json));
+        if (authHeader != null) builder.header("Authorization", authHeader);
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     public HttpResponse<String> put(String path, Object body) throws IOException, InterruptedException {
         String json = gson.toJson(body);
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + path))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .timeout(Duration.ofSeconds(10))
-                .PUT(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                .PUT(HttpRequest.BodyPublishers.ofString(json));
+        if (authHeader != null) builder.header("Authorization", authHeader);
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     public HttpResponse<String> delete(String path) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + path))
                 .timeout(Duration.ofSeconds(10))
-                .DELETE()
-                .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                .DELETE();
+        if (authHeader != null) builder.header("Authorization", authHeader);
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 }
