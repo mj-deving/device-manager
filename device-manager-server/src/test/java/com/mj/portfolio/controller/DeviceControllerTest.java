@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -22,7 +23,6 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(DeviceController.class)
@@ -52,10 +52,9 @@ class DeviceControllerTest {
     @Test
     void getList_returns200() throws Exception {
         when(service.findAll(any(), any(), any(), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(sampleResponse())));
+                .thenReturn(new PageImpl<>(List.of(sampleResponse()), PageRequest.of(0, 20), 1L));
 
         mockMvc.perform(get("/api/v1/devices"))
-                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].name").value("Router-1"));
     }
