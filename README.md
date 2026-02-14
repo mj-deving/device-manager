@@ -165,9 +165,18 @@ curl -u admin:admin123 http://213.199.32.18/api/v1/stats
 
 ## Screenshots
 
-> _Coming soon — run `mvn javafx:run` in `device-manager-client/` to see the app locally._
+<table>
+<tr>
+<td align="center"><strong>Login Dialog</strong></td>
+<td align="center"><strong>Main Window — Color-coded Device Table</strong></td>
+</tr>
+<tr>
+<td><img src="screenshots/login.png" alt="Login dialog with server URL, username and password fields" width="380"/></td>
+<td><img src="screenshots/main-window.png" alt="Main window showing device table with green/red/orange status rows, search bar, and status filter" width="560"/></td>
+</tr>
+</table>
 
-The app shows a login dialog → main window with toolbar + color-coded table → offline red banner if server is unreachable.
+The login dialog connects to any REST API endpoint (defaults to the live VPS). The main window shows all devices with color-coded rows: **green** = ACTIVE, **red** = INACTIVE, **orange** = MAINTENANCE, **gray** = DECOMMISSIONED.
 
 ---
 
