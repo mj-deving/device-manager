@@ -1,6 +1,7 @@
 package com.mj.portfolio.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mj.portfolio.config.SecurityConfig;
 import com.mj.portfolio.dto.DeviceRequest;
 import com.mj.portfolio.dto.DeviceResponse;
 import com.mj.portfolio.entity.enums.DeviceStatus;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +28,11 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+// @Import ensures our SecurityConfig (csrf disabled) is loaded in the web slice context.
+// Without it, @WebMvcTest falls back to Spring Security's default config which has CSRF
+// enabled — POST/DELETE return 403 even with @WithMockUser.
 @WebMvcTest(DeviceController.class)
+@Import(SecurityConfig.class)
 @WithMockUser
 class DeviceControllerTest {
 
