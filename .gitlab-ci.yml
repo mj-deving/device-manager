@@ -1,63 +1,133 @@
+# device-manager GitLab CI/CD
+#
+# Stages:
+#   build  → compile both modules to catch import/syntax errors fast
+#   test   → run server unit tests (WebMvcTest, @WithMockUser, PostgreSQL service)
+#   package → fat JARs as downloadable artifacts
+#   deploy → SSH redeploy on VPS (master branch only)
+#
+# Required CI/CD Variables (Settings > CI/CD > Variables):
+#   SSH_PRIVATE_KEY  – VPS private key (ed25519), type: File, protected
+#   VPS_HOST         – 213.199.32.18
+#   VPS_USER         – dev
+
 stages:
   - build
   - test
   - package
+  - deploy
+
+# Maven 3.9 image: bundles surefire 3.x which discovers JUnit 5 tests.
+# Maven 3.8 uses surefire 2.x and reports "Tests run: 0" for JUnit 5.
+image: maven:3.9-eclipse-temurin-17
 
 variables:
-  MAVEN_CLI_OPTS: "-s .m2/settings.xml -DskipTests"
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dmaven.multiModuleProjectDirectory=$CI_PROJECT_DIR"
 
 cache:
+  key: "${CI_JOB_NAME}-${CI_COMMIT_REF_SLUG}"
   paths:
     - .m2/repository/
-    - target/
 
-build_server:
+# ── Build Stage ───────────────────────────────────────────────────────────────
+
+build:server:
   stage: build
-  image: maven:3.8.7-openjdk-17
   script:
-    - mvn clean compile -pl device-manager-server
+    - mvn clean compile -pl device-manager-server -B
   artifacts:
     paths:
-      - device-manager-server/target/
+      - device-manager-server/target/classes/
     expire_in: 1 hour
 
-build_client:
+build:client:
   stage: build
-  image: maven:3.8.7-openjdk-17
   script:
-    - mvn clean compile -pl device-manager-client
+    # JavaFX requires headless flag; compile only (no GUI runner in CI)
+    - mvn clean compile -pl device-manager-client -B -Djava.awt.headless=true
   artifacts:
     paths:
-      - device-manager-client/target/
+      - device-manager-client/target/classes/
     expire_in: 1 hour
 
-test_server:
-  stage: test
-  image: maven:3.8.7-openjdk-17
-  script:
-    - mvn test -pl device-manager-server
-  dependencies:
-    - build_server
+# ── Test Stage ────────────────────────────────────────────────────────────────
 
-test_client:
+test:server:
   stage: test
-  image: maven:3.8.7-openjdk-17
+  services:
+    - name: postgres:16
+      alias: postgres
+  variables:
+    POSTGRES_DB: devicedb
+    POSTGRES_USER: portfolio
+    POSTGRES_PASSWORD: portfolio_dev_password
+    POSTGRES_HOST_AUTH_METHOD: trust
+    # Spring profile picks up application-dev.yml which points to localhost;
+    # in CI the service is reachable at the alias "postgres"
+    SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/devicedb"
+    SPRING_DATASOURCE_USERNAME: portfolio
+    SPRING_DATASOURCE_PASSWORD: portfolio_dev_password
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq postgresql-client
+    - until pg_isready -h postgres -U portfolio; do sleep 1; done
+    - PGPASSWORD=portfolio_dev_password psql -h postgres -U portfolio -d devicedb
+        -f device-manager-server/src/main/resources/db/schema.sql
   script:
-    - mvn test -pl device-manager-client
-  dependencies:
-    - build_client
+    - mvn test -pl device-manager-server -B
+  artifacts:
+    when: always
+    reports:
+      junit: device-manager-server/target/surefire-reports/TEST-*.xml
+    paths:
+      - device-manager-server/target/surefire-reports/
+    expire_in: 7 days
+
+# ── Package Stage ─────────────────────────────────────────────────────────────
 
 package:
   stage: package
-  image: maven:3.8.7-openjdk-17
   script:
-    - mvn clean package -DskipTests
+    - mvn clean package -DskipTests -B
   artifacts:
+    name: "device-manager-${CI_COMMIT_SHORT_SHA}"
     paths:
-      - device-manager-server/target/*.jar
-      - device-manager-client/target/*.jar
+      - device-manager-server/target/device-manager-server-*.jar
+      - device-manager-client/target/device-manager-client-*.jar
+    exclude:
+      - "**/*-sources.jar"
+      - "**/*.original"
     expire_in: 30 days
   only:
-    - main
+    - master
     - tags
+
+# ── Deploy Stage ──────────────────────────────────────────────────────────────
+
+deploy:server:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+  script:
+    # Pull latest, build on VPS (avoids transferring large JAR over SSH),
+    # then run the deploy script which restarts the systemd service.
+    - |
+      ssh "${VPS_USER}@${VPS_HOST}" "
+        set -e
+        cd /home/dev/device-manager
+        git pull origin master
+        mvn clean package -pl device-manager-server -DskipTests -B \
+          -Dmaven.repo.local=/home/dev/.m2/repository
+        bash /home/dev/deploy-app.sh device-manager \
+          /home/dev/device-manager/device-manager-server/target/device-manager-server-1.0.0.jar
+      "
+  environment:
+    name: production
+    url: http://213.199.32.18/api/v1/devices
+  only:
+    - master
+  when: on_success

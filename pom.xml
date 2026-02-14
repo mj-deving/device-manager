@@ -63,6 +63,14 @@
                         <parameters>true</parameters>
                     </configuration>
                 </plugin>
+                <!-- Explicit 3.x required: spring-boot-dependencies BOM manages
+                     dependency versions only, not plugin versions. Without this,
+                     Maven falls back to 2.x which cannot discover JUnit 5 tests. -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
