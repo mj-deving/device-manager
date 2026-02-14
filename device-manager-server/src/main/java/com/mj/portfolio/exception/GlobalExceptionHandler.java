@@ -43,7 +43,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(
             Exception ex, HttpServletRequest request) {
-        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request.getRequestURI());
+        ex.printStackTrace();
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR,
+                ex.getClass().getSimpleName() + ": " + ex.getMessage(), request.getRequestURI());
     }
 
     private ResponseEntity<Map<String, Object>> buildError(HttpStatus status, String message, String path) {
