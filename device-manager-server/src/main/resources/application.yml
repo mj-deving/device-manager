@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: device-manager-server
+  profiles:
+    active: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/devicedb
+    username: portfolio
+    password: portfolio_dev_password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    # Ensures schema.sql runs BEFORE Hibernate validates the schema
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+
+server:
+  port: 8080
+  error:
+    include-message: always
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/devicedb}
+    username: ${DB_USERNAME:portfolio}
+    password: ${DB_PASSWORD:portfolio_dev_password}
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
