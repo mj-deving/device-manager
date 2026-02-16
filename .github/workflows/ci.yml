@@ -45,8 +45,18 @@ jobs:
       - name: Compile all modules
         run: mvn clean compile -B
 
-      - name: Run server tests
+      - name: Run server tests with coverage
         run: mvn test -pl device-manager-server -B
+
+      - name: Generate JaCoCo coverage report
+        run: mvn jacoco:report -pl device-manager-server -B
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: device-manager-server/target/site/jacoco/
+          retention-days: 14
 
       - name: Compile client (no GUI tests in CI)
         run: mvn clean compile -pl device-manager-client -B
@@ -67,3 +77,30 @@ jobs:
           name: device-manager-client
           path: device-manager-client/target/device-manager-client-*.jar
           retention-days: 7
+
+  deploy:
+    name: Deploy to VPS
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 213.199.32.18
+          username: dev
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/dev/projects/device-manager
+            git pull origin master
+            mvn clean package -pl device-manager-server -DskipTests -B
+            bash /home/dev/deploy-app.sh device-manager \
+              /home/dev/projects/device-manager/device-manager-server/target/device-manager-server-1.0.0.jar
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -sf -u admin:admin123 http://213.199.32.18/api/v1/devices?page=0\&size=1 || exit 1
+          echo "Health check passed"

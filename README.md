@@ -285,9 +285,11 @@ device-manager/
 Runs on every push/PR to `master`:
 
 1. Compile all modules
-2. Apply DB schema + run server unit tests (JUnit 5, `@WebMvcTest`, `@WithMockUser`)
-3. Compile client module
-4. Package fat JARs → uploaded as downloadable artifacts (7-day retention)
+2. Apply DB schema + run server unit tests with **JaCoCo coverage**
+3. Upload coverage report as artifact (14-day retention)
+4. Compile client module
+5. Package fat JARs → uploaded as downloadable artifacts (7-day retention)
+6. **Deploy to VPS** (master branch only, requires manual approval via GitHub Environments)
 
 ### GitLab CI (Secondary — Requires account verification)
 

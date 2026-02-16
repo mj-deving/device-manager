@@ -1,13 +1,20 @@
 package com.mj.portfolio.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 import java.util.Map;
 
+@Schema(description = "Dashboard statistics overview")
 public class StatsResponse {
 
+    @Schema(description = "Total number of devices", example = "42")
     private long total;
+    @Schema(description = "Device count grouped by type")
     private Map<String, Long> byType;
+    @Schema(description = "Device count grouped by status")
     private Map<String, Long> byStatus;
+    @Schema(description = "Most recent device log entries")
     private List<DeviceLogResponse> recentActivity;
 
     public StatsResponse() {}
