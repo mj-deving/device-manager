@@ -93,11 +93,11 @@ jobs:
           username: dev
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /home/dev/projects/device-manager
+            cd /home/dev/device-manager
             git pull origin master
             mvn clean package -pl device-manager-server -DskipTests -B
             bash /home/dev/deploy-app.sh device-manager \
-              /home/dev/projects/device-manager/device-manager-server/target/device-manager-server-1.0.0.jar
+              /home/dev/device-manager/device-manager-server/target/device-manager-server-1.0.0.jar
 
       - name: Health check
         run: |
