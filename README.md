@@ -188,6 +188,14 @@ The login dialog connects to any REST API endpoint (defaults to the live VPS). T
 - Maven 3.9+
 - PostgreSQL 16 (for local server only)
 
+### IDE Setup
+
+**Eclipse:** File → Import → Existing Maven Projects → select project root → both modules auto-detected
+
+**IntelliJ IDEA:** File → Open → select root `pom.xml` → Open as Project
+
+Both IDEs resolve the multi-module structure automatically via the parent POM.
+
 ### Build All Modules
 
 ```bash
@@ -336,6 +344,17 @@ Architecture Decision Records are in [`.ai/decisions/`](.ai/decisions/):
 - `001` — Multi-module Maven structure
 - `002` — Spring Boot with custom parent POM (not `spring-boot-starter-parent`)
 - `003` — GitHub Actions as primary CI (GitLab CI blocked on free tier)
+
+---
+
+## Development Workflow
+
+- **Issue tracking** via GitHub Issues and GitLab Boards (Kanban-style)
+- **Conventional commits** (`feat:`, `fix:`, `test:`, `refactor:`, `ci:`)
+- **CI/CD pipeline** — automated build, test (with JaCoCo coverage), and deploy
+- **Architecture Decision Records** for non-obvious technical choices
+- **Dual-remote** repository (GitHub + GitLab)
+- **AI-assisted development** with Claude Code (~80% implementation, human architecture decisions)
 
 ---
 
